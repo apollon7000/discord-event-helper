@@ -788,33 +788,34 @@
 
 
     <script>
-
+      (async () => {
       const SUPABASE_URL = 'https://toxrqbcgtmkgvmauqbej.supabase.co'; 
       const SUPABASE_ANON_KEY = 'sb_publishable_lxctwas9qcMS5XZHWJ4Idw_POpLK1oW';
 
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const sb = window.supabase ? window.supabase.createClient(DB_URL, DB_KEY) : null;
+    if (!sb) return console.error('Supabase SDK failed to load.');
 
-  const room = supabaseClient.channel('online-team');
+    const room = sb.channel('online-team');
 
-  room
-    .on('presence', { event: 'sync' }, () => {
-      const state = room.presenceState();
-      console.log('Currently online team members:', state);
-    })
-    .subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await room.track({
-          online_at: new Date().toISOString()
-        });
-      }
-    });
+    room
+      .on('presence', { event: 'sync' }, () => {
+        const state = room.presenceState();
+        console.log('Currently online team members:', state);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await room.track({
+            online_at: new Date().toISOString()
+          });
+        }
+      });
 
-  supabaseClient
-    .channel('public:team_data')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'team_data' }, (payload) => {
-      console.log('Real-time update received:', payload);
-    })
-    .subscribe();
+    sb.channel('public:team_data')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_data' }, (payload) => {
+        console.log('Real-time update received:', payload);
+      })
+      .subscribe();
+  })();
     </script>
 </body>
 </html>
