@@ -789,13 +789,14 @@
 
     <script>
       (async () => {
-      const SUPABASE_URL = 'https://toxrqbcgtmkgvmauqbej.supabase.co'; 
-      const SUPABASE_ANON_KEY = 'sb_publishable_lxctwas9qcMS5XZHWJ4Idw_POpLK1oW';
+      window.DB_URL = 'https://toxrqbcgtmkgvmauqbej.supabase.co'; 
+      window.DB_KEY = 'sb_publishable_lxctwas9qcMS5XZHWJ4Idw_POpLK1oW';
 
-    const sb = window.supabase ? window.supabase.createClient(DB_URL, DB_KEY) : null;
-    if (!sb) return console.error('Supabase SDK failed to load.');
+if (window.supabase) {
+    window.sbClient = window.supabase.createClient(window.DB_URL, window.DB_KEY);
 
-    const room = sb.channel('online-team');
+    // Track online team members (Presence)
+    const room = window.sbClient.channel('online-team');
 
     room
       .on('presence', { event: 'sync' }, () => {
@@ -810,12 +811,16 @@
         }
       });
 
-    sb.channel('public:team_data')
+    // Listen for real-time database changes
+    window.sbClient
+      .channel('public:team_data')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'team_data' }, (payload) => {
         console.log('Real-time update received:', payload);
       })
       .subscribe();
-  })();
+  } else {
+    console.error('Supabase library failed to load.');
+  }
     </script>
 </body>
 </html>
