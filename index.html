@@ -220,6 +220,8 @@
       handleOAuthCallback();      
       initEventListeners();      
       renderApp();    
+
+      setInterval(checkUpcomingToLiveStatus, 10000);
     });    
 
     function loadLocalStorage() {      
@@ -242,7 +244,8 @@
             hosts: ['AlexAdmin', 'DiscordMod'],            
             cohosts: ['CommunityHost'],            
             status: 'Upcoming',            
-            timestamp: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })          
+            timestamp: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            scheduledTime: null
           }        
         ];        
         saveEvents();      
@@ -252,6 +255,34 @@
     function saveEvents() {      
       localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(state.events));    
     }    
+
+    function saveUser() {
+      if (state.currentUser) {
+        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(state.currentUser));
+      } else {
+        localStorage.removeItem(STORAGE_KEY_USER);
+      }
+    }
+
+    function checkUpcomingToLiveStatus() {
+      let updated = false;
+      const now = new Date().getTime();
+
+      state.events.forEach(evt => {
+        if (evt.status === 'Upcoming' && evt.scheduledTime) {
+          const startTime = new Date(evt.scheduledTime).getTime();
+          if (now >= startTime) {
+            evt.status = 'Live Now';
+            updated = true;
+          }
+        }
+      });
+
+      if (updated) {
+        saveEvents();
+        renderApp();
+      }
+    }
 
     function handleOAuthCallback() {      
       const hash = window.location.hash.substring(1);      
@@ -270,7 +301,6 @@
                 : 'https://cdn.discordapp.com/embed/avatars/0.png';  
               state.currentUser = { id: userData.id, username: userData.username, avatar: avatarUrl }; 
               saveUser(); 
-              autoFillHostName();
             }          
           })          
           .catch(err => console.error('OAuth User Info Error:', err))          
@@ -282,7 +312,44 @@
       }    
     }    
 
+    function loginWithDiscord() {
+      const redirectUri = encodeURIComponent(state.config.redirectUri);
+      const discordUrl = `https://discord.com/api/oauth2/authorize?client_id=${state.config.clientId}&redirect_uri=${redirectUri}&response_type=token&scope=identify`;
+      window.location.href = discordUrl;
+    }
+
+    function logoutUser() {
+      state.currentUser = null;
+      saveUser();
+      renderApp();
+    }
+
+    function renderAuth() {
+      const authContainer = document.getElementById('auth-container');
+      if (!authContainer) return;
+
+      if (state.currentUser) {
+        authContainer.innerHTML = `
+          <div class="flex items-center space-x-3 bg-discord-darker border border-gray-700/50 rounded-xl px-3 py-1.5">
+            <img src="${state.currentUser.avatar}" class="w-6 h-6 rounded-full border border-discord-blurple">
+            <span class="text-xs font-semibold text-white">${escapeHtml(state.currentUser.username)}</span>
+            <button onclick="logoutUser()" class="text-xs text-gray-400 hover:text-discord-red transition-colors ml-1" title="Log Out">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+          </div>
+        `;
+      } else {
+        authContainer.innerHTML = `
+          <button onclick="loginWithDiscord()" class="px-3.5 py-2 text-xs md:text-sm font-semibold text-white bg-discord-blurple hover:bg-indigo-600 rounded-xl transition-all shadow-md shadow-discord-blurple/20 flex items-center space-x-2">
+            <i class="fa-brands fa-discord"></i>
+            <span>Login with Discord</span>
+          </button>
+        `;
+      }
+    }
+
     function renderApp() {      
+      renderAuth();
       renderEventsList();      
       renderStats();    
     }    
@@ -381,6 +448,7 @@
     function createAndSaveEvent(eventData) {
       state.events.unshift(eventData);
       saveEvents();
+      checkUpcomingToLiveStatus();
       renderApp();
       document.getElementById('event-form').reset();
       renderTagPreviews();
@@ -406,7 +474,8 @@
           hosts,          
           cohosts,          
           status,          
-          timestamp: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })        
+          timestamp: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          scheduledTime: null
         };        
 
         if (status === 'Upcoming') {
@@ -453,6 +522,7 @@
       if (pendingEventData) {
         if (dateTimeVal) {
           const selectedDate = new Date(dateTimeVal);
+          pendingEventData.scheduledTime = selectedDate.toISOString();
           pendingEventData.timestamp = selectedDate.toLocaleString([], { 
             month: 'short', 
             day: 'numeric', 
