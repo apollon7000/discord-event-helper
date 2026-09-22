@@ -870,5 +870,23 @@ if (window.supabase) {
     console.error('Supabase SDK failed to load.');
   }
     </script>
+  <!-- Date/Time Selection Modal -->
+<div id="upcoming-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
+  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 w-full max-w-sm shadow-xl text-white">
+    <h3 class="text-lg font-bold mb-3">Schedule Upcoming Event</h3>
+    
+    <label class="block text-xs text-slate-400 mb-1">Select Date & Time</label>
+    <input type="datetime-local" id="upcoming-datetime" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500 mb-4">
+
+    <div class="flex justify-end gap-2">
+      <button onclick="closeUpcomingModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs">
+        Cancel
+      </button>
+      <button onclick="confirmUpcomingDate()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs font-semibold">
+        Confirm Time
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
