@@ -830,6 +830,68 @@ if (window.supabase) {
       });
     }
 
+    window.handleStatusChange = function(eventId, selectedStatus) {
+      if (selectedStatus === 'Upcoming') {
+        document.getElementById('target-event-id').value = eventId;
+        document.getElementById('schedule-modal').classList.remove('hidden');
+      } else {
+        updateEventStatus(eventId, selectedStatus, null);
+      }
+    };
+
+
+    window.closeScheduleModal = function() {
+      document.getElementById('schedule-modal').classList.add('hidden');
+      document.getElementById('target-event-id').value = '';
+      document.getElementById('event-datetime-input').value = '';
+    };
+
+
+    window.saveScheduledTime = async function() {
+      const eventId = document.getElementById('target-event-id').value;
+      const rawTime = document.getElementById('event-datetime-input').value;
+
+      if (!rawTime) {
+        alert("Please pick a valid date and time.");
+        return;
+      }
+
+      const scheduledIso = new Date(rawTime).toISOString();
+      await updateEventStatus(eventId, 'Upcoming', scheduledIso);
+      closeScheduleModal();
+    };
+
+
+    async function updateEventStatus(eventId, status, scheduledAt = null) {
+      const payload = { status: status };
+      if (scheduledAt) payload.scheduled_at = scheduledAt;
+
+      const { error } = await window.sbClient
+        .from('team_data')
+        .update(payload)
+        .eq('id', eventId);
+
+      if (error) console.error("Error updating status:", error);
+    }
+
+
+    function startLiveStatusChecker(events) {
+      setInterval(() => {
+        const now = new Date().getTime();
+
+        events.forEach(event => {
+          if (event.status === 'Upcoming' && event.scheduled_at) {
+            const eventTime = new Date(event.scheduled_at).getTime();
+
+            if (eventTime <= now) {
+              updateEventStatus(event.id, 'Live now', null);
+            }
+          }
+        });
+      }, 10000); 
+    }
+
+  }
     window.editEvent = async function(eventId) {
       const newTitle = prompt("Enter new event title:");
       const newContent = prompt("Enter new event description:");
@@ -870,20 +932,22 @@ if (window.supabase) {
     console.error('Supabase SDK failed to load.');
   }
     </script>
-  <!-- Date/Time Selection Modal -->
-<div id="upcoming-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
-  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 w-full max-w-sm shadow-xl text-white">
-    <h3 class="text-lg font-bold mb-3">Schedule Upcoming Event</h3>
+<!-- Event Schedule Modal -->
+<div id="schedule-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
+  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 w-full max-w-sm text-white shadow-2xl">
+    <h3 class="text-lg font-bold mb-3">Set Event Schedule</h3>
     
-    <label class="block text-xs text-slate-400 mb-1">Select Date & Time</label>
-    <input type="datetime-local" id="upcoming-datetime" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500 mb-4">
+    <label class="block text-xs text-slate-400 mb-1">When does this event happen?</label>
+    <input type="datetime-local" id="event-datetime-input" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500 mb-4">
+
+    <input type="hidden" id="target-event-id">
 
     <div class="flex justify-end gap-2">
-      <button onclick="closeUpcomingModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs">
+      <button onclick="closeScheduleModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs">
         Cancel
       </button>
-      <button onclick="confirmUpcomingDate()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs font-semibold">
-        Confirm Time
+      <button onclick="saveScheduledTime()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs font-semibold">
+        Save Schedule
       </button>
     </div>
   </div>
