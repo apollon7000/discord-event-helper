@@ -57,6 +57,16 @@
         </div>
 
         <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Host(s)</label>
+          <input type="text" id="event-hosts" placeholder="e.g., Alex, Sam" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Co-Host(s)</label>
+          <input type="text" id="event-cohosts" placeholder="e.g., Jordan, Chris" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Description</label>
           <textarea id="event-desc" rows="3" required placeholder="Brief description..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"></textarea>
         </div>
@@ -91,14 +101,13 @@
 
   <script>
     window.DB_URL = 'https://toxrqbcgtmkgvmauqbej.supabase.co';
-    window.DB_KEY = 'YOUR_ANON_PUBLIC_KEY_HERE';
+    window.DB_KEY = 'sb_publishable_lxctwas9qcMS5XZHWJ4Idw_POpLK1oW';
 
     let currentUser = 'Staff Member';
 
     if (window.supabase) {
       window.sbClient = window.supabase.createClient(window.DB_URL, window.DB_KEY);
 
-      // Restore user session if returning from Discord OAuth
       window.sbClient.auth.onAuthStateChange((event, session) => {
         if (session?.user) {
           currentUser = session.user.user_metadata.full_name || session.user.user_metadata.custom_claims?.global_name || session.user.email;
@@ -106,7 +115,7 @@
         }
       });
 
-      // Fetch Events
+      // 1. Fetch Events
       async function loadEvents() {
         const { data: events, error } = await window.sbClient
           .from('team_data')
@@ -142,6 +151,10 @@
                              status === 'Upcoming' ? 'bg-indigo-900/60 text-indigo-400 border-indigo-700' :
                              'bg-slate-700 text-slate-300 border-slate-600';
 
+          const hostsDisplay = event.hosts ? `Host: ${event.hosts}` : '';
+          const cohostsDisplay = event.cohosts ? `Co-Host: ${event.cohosts}` : '';
+          const teamInfo = [hostsDisplay, cohostsDisplay].filter(Boolean).join(' | ');
+
           const card = document.createElement('div');
           card.className = 'bg-slate-800 border border-slate-700 rounded-xl p-5 hover:border-indigo-500 transition flex flex-col justify-between';
           card.innerHTML = `
@@ -153,7 +166,8 @@
                 <span class="text-xs text-slate-400">📅 ${timeText}</span>
               </div>
               <h3 class="text-lg font-semibold mb-2 text-white">${event.title || 'Untitled Event'}</h3>
-              <p class="text-sm text-slate-400 mb-4">${event.content || ''}</p>
+              <p class="text-sm text-slate-400 mb-3">${event.content || ''}</p>
+              ${teamInfo ? `<p class="text-xs text-indigo-300 bg-slate-900/50 p-2 rounded border border-slate-700 mb-3">${teamInfo}</p>` : ''}
             </div>
             
             <div class="border-t border-slate-700 pt-3 flex flex-col gap-3">
@@ -168,9 +182,14 @@
 
               <div class="flex justify-between items-center pt-1 border-t border-slate-700/50">
                 <span class="text-xs text-slate-500">${event.updated_by ? 'By: ' + event.updated_by : ''}</span>
-                <button onclick="markComplete('${event.id}')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded transition font-medium">
-                  ✓ Done
-                </button>
+                <div class="flex items-center gap-2">
+                  <button onclick="deleteEvent('${event.id}')" class="text-xs bg-rose-900/50 hover:bg-rose-700 border border-rose-800 text-rose-200 px-2.5 py-1.5 rounded transition font-medium">
+                    🗑️ Delete
+                  </button>
+                  <button onclick="markComplete('${event.id}')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded transition font-medium">
+                    ✓ Done
+                  </button>
+                </div>
               </div>
             </div>
           `;
@@ -178,7 +197,7 @@
         });
       }
 
-      // Status Dropdown Handling
+      // 2. Status Dropdown Handling
       window.handleStatusChange = function(eventId, selectedStatus) {
         if (selectedStatus === 'Upcoming') {
           document.getElementById('target-event-id').value = eventId;
@@ -224,11 +243,13 @@
         }
       }
 
-      // Create Event
+      // 3. Create Event
       window.handleCreateEvent = async function(e) {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
         const rawTime = document.getElementById('event-time').value;
+        const hosts = document.getElementById('event-hosts').value;
+        const cohosts = document.getElementById('event-cohosts').value;
         const desc = document.getElementById('event-desc').value;
 
         const scheduledIso = rawTime ? new Date(rawTime).toISOString() : null;
@@ -239,6 +260,8 @@
             title: title,
             content: desc,
             scheduled_at: scheduledIso,
+            hosts: hosts,
+            cohosts: cohosts,
             status: 'Upcoming',
             is_completed: false,
             updated_by: currentUser
@@ -246,13 +269,32 @@
 
         if (error) {
           console.error('Error creating event:', error);
+          alert('Failed to save event.');
         } else {
           toggleModal(false);
           loadEvents();
         }
       };
 
-      // Mark Complete
+      // 4. Delete / Remove Event Completely
+      window.deleteEvent = async function(eventId) {
+        const confirmed = confirm("Are you sure you want to permanently delete this event?");
+        if (!confirmed) return;
+
+        const { error } = await window.sbClient
+          .from('team_data')
+          .delete()
+          .eq('id', eventId);
+
+        if (error) {
+          console.error('Error deleting event:', error);
+          alert('Could not delete event. Check RLS policies if issue persists.');
+        } else {
+          loadEvents();
+        }
+      };
+
+      // 5. Mark Complete
       window.markComplete = async function(eventId) {
         const { error } = await window.sbClient
           .from('team_data')
@@ -266,36 +308,7 @@
         }
       };
 
-      // Realtime Subscriptions
-      window.sbClient
-        .channel('public:team_data')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'team_data' }, () => {
-          loadEvents();
-        })
-        .subscribe();
-
-      // Auto-check for event start times every 30 seconds
-      setInterval(async () => {
-        const { data: events } = await window.sbClient
-          .from('team_data')
-          .select('*')
-          .eq('status', 'Upcoming')
-          .eq('is_completed', false);
-
-        if (!events) return;
-
-        const now = new Date();
-        events.forEach(async (event) => {
-          if (event.scheduled_at && new Date(event.scheduled_at) <= now) {
-            await window.sbClient
-              .from('team_data')
-              .update({ status: 'Live now' })
-              .eq('id', event.id);
-          }
-        });
-      }, 30000);
-
-      // Discord Login
+      // 6. Discord Login
       window.handleDiscordLogin = async function() {
         await window.sbClient.auth.signInWithOAuth({
           provider: 'discord',
@@ -321,7 +334,6 @@
         `;
       }
 
-      // Initial Load
       loadEvents();
     }
 
