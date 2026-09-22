@@ -1,956 +1,330 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Server Event Helpers</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:,">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            discord: {
-              blurple: '#5865F2',
-              green: '#57F287',
-              yellow: '#FEE75C',
-              fuchsia: '#EB459E',
-              red: '#ED4245',
-              dark: '#313338',
-              darker: '#2B2D31',
-              darkest: '#1E1F22',
-            }
-          }
-        }
-      }
-    }
-  </script>
-  <style>
-    /* Custom scrollbar for modern sleek dark feel */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #1E1F22;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #3B3D44;
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #4E5058;
-    }
-    .glass-card {
-      background: rgba(43, 45, 49, 0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-  </style>
+  <title>Event Helper Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-discord-darkest text-gray-200 font-sans min-h-screen flex flex-col antialiased">
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
 
-  <div id="app" class="flex-1 flex flex-col">
-    <!-- Navbar -->
-    <header class="sticky top-0 z-30 glass-card border-b border-gray-800 px-4 lg:px-8 py-3.5 shadow-md">
-      <div class="max-w-7xl mx-auto flex items-center justify-between">
-        
-        <!-- Brand Logo -->
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-discord-blurple to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <i class="fa-solid font-bold text-white text-xl">SE</i>
-          </div>
-          <div>
-            <h1 class="font-bold text-lg leading-tight text-white tracking-wide">Server Event Helpers</h1>
-            <p class="text-xs text-gray-400">Community & Discord Event Suite</p>
-          </div>
-        </div>
-
-        <!-- Right Side Nav Actions -->
-        <div class="flex items-center space-x-3">
-          <!-- Setup Guide Button -->
-          <button id="open-guide-btn" class="px-3.5 py-2 text-xs md:text-sm font-medium text-gray-300 hover:text-white bg-discord-darker hover:bg-gray-700/60 rounded-xl transition-all border border-gray-700/50 flex items-center space-x-2">
-            <i class="fa-solid font-normal text-discord-blurple">?</i>
-            <span class="hidden sm:inline">Setup Guide</span>
-          </button>
-
-          <!-- Settings Button -->
-          <button id="open-settings-btn" class="p-2.5 text-gray-300 hover:text-white bg-discord-darker hover:bg-gray-700/60 rounded-xl transition-all border border-gray-700/50" title="OAuth Settings">
-            <i class="fa-solid text-sm">⚙️</i>
-          </button>
-
-          <!-- Auth Status Container -->
-          <div id="auth-container" class="flex items-center">
-            <!-- Dynamic auth content injected via JS -->
-          </div>
-        </div>
-
-      </div>
-    </header>
-
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-      
-      <!-- Left Sidebar: Event Creation Form -->
-      <section class="lg:col-span-5 flex flex-col space-y-6">
-        <div class="glass-card rounded-2xl p-6 shadow-xl relative overflow-hidden">
-          <div class="absolute -top-10 -right-10 w-32 h-32 bg-discord-blurple/10 rounded-full blur-2xl pointer-events-none"></div>
-
-          <div class="flex items-center justify-between pb-4 border-b border-gray-800 mb-6">
-            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-              <i class="fa-solid text-discord-blurple">➕</i>
-              <span>Schedule New Event</span>
-            </h2>
-            <span class="text-xs bg-discord-blurple/20 text-discord-blurple font-semibold px-2.5 py-1 rounded-full border border-discord-blurple/30">
-              Quick Creator
-            </span>
-          </div>
-
-          <form id="event-form" class="space-y-5">
-            <!-- Title -->
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                Event Title <span class="text-discord-red">*</span>
-              </label>
-              <input type="text" id="event-title" required placeholder="e.g., Community Game Night or Q&A Session"
-                class="w-full bg-discord-darkest border border-gray-700/80 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-discord-blurple focus:ring-1 focus:ring-discord-blurple transition-all">
-            </div>
-
-            <!-- Hosts (Blue tags) -->
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-blue-400">
-                  Hosts <span class="text-discord-red">*</span>
-                </label>
-                <span class="text-[11px] text-gray-500">Comma-separated</span>
-              </div>
-              <input type="text" id="event-hosts" required placeholder="e.g., Alex, Jordan, Sam"
-                class="w-full bg-discord-darkest border border-gray-700/80 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-              
-              <!-- Host Preview Tags -->
-              <div id="hosts-tag-preview" class="flex flex-wrap gap-1.5 mt-2.5 min-h-[24px]"></div>
-            </div>
-
-            <!-- Co-Hosts (Purple tags) -->
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-purple-400">
-                  Co-Hosts
-                </label>
-                <span class="text-[11px] text-gray-500">Optional</span>
-              </div>
-              <input type="text" id="event-cohosts" placeholder="e.g., Taylor, Morgan"
-                class="w-full bg-discord-darkest border border-gray-700/80 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
-              
-              <!-- Co-Host Preview Tags -->
-              <div id="cohosts-tag-preview" class="flex flex-wrap gap-1.5 mt-2.5 min-h-[24px]"></div>
-            </div>
-
-            <!-- Category / Status Selector -->
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                Initial Status
-              </label>
-              <select id="event-status" class="w-full bg-discord-darkest border border-gray-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-discord-blurple">
-                <option value="Upcoming">🗓️ Upcoming</option>
-                <option value="Live Now">🔴 Live Now</option>
-                <option value="Draft">📝 Draft</option>
-              </select>
-            </div>
-
-            <!-- Submit Button -->
-            <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-discord-blurple to-indigo-600 hover:from-indigo-600 hover:to-discord-blurple text-white font-semibold rounded-xl shadow-lg shadow-discord-blurple/25 hover:shadow-discord-blurple/40 active:scale-[0.98] transition-all flex items-center justify-center space-x-2">
-              <i class="fa-solid">📌</i>
-              <span>Create Event</span>
-            </button>
-          </form>
-        </div>
-
-        <!-- System Quick Stats Widget -->
-        <div class="glass-card rounded-2xl p-5 shadow-lg flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-discord-blurple text-lg">
-              📊
-            </div>
-            <div>
-              <div class="text-xs text-gray-400 font-medium">Total Saved Events</div>
-              <div id="stats-total-events" class="text-lg font-bold text-white">0</div>
-            </div>
-          </div>
-          <button id="clear-all-events-btn" class="text-xs text-gray-500 hover:text-discord-red transition-colors px-2 py-1 rounded hover:bg-discord-red/10">
-            Clear All
-          </button>
-        </div>
-      </section>
-
-      <section class="lg:col-span-7 flex flex-col space-y-6">
-        <!-- Controls Bar -->
-        <div class="glass-card rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div class="relative w-full sm:w-64">
-            <input type="text" id="search-events" placeholder="Search events or hosts..."
-              class="w-full bg-discord-darkest border border-gray-700/80 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-discord-blurple">
-            <i class="fa-solid text-gray-500 absolute left-3 top-3 text-xs">🔍</i>
-          </div>
-
-          <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
-            <span class="text-xs text-gray-400 hidden sm:inline">Filter:</span>
-            <button data-filter="all" class="filter-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-discord-blurple text-white transition-all">All</button>
-            <button data-filter="Upcoming" class="filter-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-discord-darker hover:bg-gray-700 text-gray-300 transition-all">Upcoming</button>
-            <button data-filter="Live Now" class="filter-btn px-3 py-1.5 text-xs font-medium rounded-lg bg-discord-darker hover:bg-gray-700 text-gray-300 transition-all">Live</button>
-          </div>
-        </div>
-
-        <!-- Events Grid / List -->
-        <div id="events-list" class="space-y-4">
-          <!-- Dynamic Event Cards Injected Here -->
-        </div>
-
-        <!-- Empty State Container -->
-        <div id="empty-state" class="hidden glass-card rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-3">
-          <div class="w-16 h-16 rounded-full bg-discord-darker flex items-center justify-center text-3xl text-gray-600 mb-2">
-            🏷️
-          </div>
-          <h3 class="text-base font-bold text-gray-300">No events found</h3>
-          <p class="text-xs text-gray-500 max-w-sm">
-            Schedule an event using the form on the left, or try adjusting your search filters.
-          </p>
-        </div>
-      </section>
-
-    </main>
-  </div>
-
-  
-  <!-- DISCORD OAUTH SETTINGS MODAL -->
-  <div id="settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-card bg-discord-darker border border-gray-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative transform transition-all scale-95 opacity-0 modal-content">
-      <button id="close-settings-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white p-2">
-        ✖
+  <!-- Top Navigation -->
+  <nav class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-indigo-400">Server Event Manager</h1>
+    
+    <!-- User / Auth Profile Area -->
+    <div id="auth-area" class="flex items-center space-x-3">
+      <button id="login-btn" onclick="handleDiscordLogin()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+        </svg>
+        <span>Login with Discord</span>
       </button>
+    </div>
+  </nav>
 
-      <div class="flex items-center space-x-3 mb-5">
-        <div class="w-10 h-10 rounded-xl bg-discord-blurple/20 text-discord-blurple flex items-center justify-center text-lg">
-          ⚙️
-        </div>
+  <!-- Main Dashboard -->
+  <main class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold">Upcoming Events</h2>
+      <button id="open-modal-btn" onclick="toggleModal(true)" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium shadow-md transition">
+        + Create Event
+      </button>
+    </div>
+
+    <!-- Event Cards Container -->
+    <div id="events-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <p class="text-slate-400">Loading events...</p>
+    </div>
+  </main>
+
+  <!-- Create Event Modal -->
+  <div id="event-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
+      <h3 class="text-xl font-bold mb-4">Create New Event</h3>
+      
+      <form id="create-event-form" onsubmit="handleCreateEvent(event)" class="space-y-4">
         <div>
-          <h3 class="text-lg font-bold text-white">Discord App Integration</h3>
-          <p class="text-xs text-gray-400">Configure OAuth parameters</p>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Event Title</label>
+          <input type="text" id="event-title" required placeholder="e.g., Movie Night" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
         </div>
-      </div>
-
-      <form id="oauth-settings-form" class="space-y-4">
+        
         <div>
-          <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1">
-            Client ID
-          </label>
-          <input type="text" id="cfg-client-id" placeholder="e.g. 123456789012345678"
-            class="w-full bg-discord-darkest border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-discord-blurple focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Date & Time</label>
+          <input type="datetime-local" id="event-time" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <!-- Hosts Input -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Host(s)</label>
+          <input type="text" id="event-hosts" placeholder="e.g., Alex, Sam" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <!-- Co-Hosts Input -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Co-Host(s)</label>
+          <input type="text" id="event-cohosts" placeholder="e.g., Jordan, Chris" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1">
-            Redirect URI
-          </label>
-          <input type="text" id="cfg-redirect-uri" placeholder="e.g. https://your-site.com/index.html"
-            class="w-full bg-discord-darkest border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-discord-blurple focus:outline-none">
-          <p class="text-[11px] text-gray-500 mt-1">Must match the Redirect URI in Discord Dev Portal.</p>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Description</label>
+          <textarea id="event-desc" rows="3" required placeholder="Brief description..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"></textarea>
         </div>
 
-        <div class="bg-discord-darkest/60 border border-gray-800 rounded-xl p-3 flex items-center justify-between">
-          <div class="flex items-center space-x-2">
-            <input type="checkbox" id="cfg-mock-mode" class="rounded bg-discord-darker border-gray-700 text-discord-blurple focus:ring-0">
-            <label for="cfg-mock-mode" class="text-xs text-gray-300 cursor-pointer font-medium">Enable Quick Demo Mode</label>
-          </div>
-          <span class="text-[10px] bg-discord-green/20 text-discord-green px-2 py-0.5 rounded font-mono">Bypass API</span>
-        </div>
-
-        <div class="pt-2 flex justify-end space-x-3">
-          <button type="button" id="save-settings-btn" class="w-full py-2.5 bg-discord-blurple hover:bg-indigo-600 text-white font-semibold rounded-xl text-sm transition-all shadow-md">
-            Save Credentials
-          </button>
+        <div class="flex justify-end space-x-3 pt-2">
+          <button type="button" onclick="toggleModal(false)" class="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-white transition">Cancel</button>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-sm font-semibold text-white transition">Create Event</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- STEP-BY-STEP SETUP GUIDE MODAL -->
-  <div id="guide-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-card bg-discord-darker border border-gray-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[85vh] flex flex-col transform transition-all scale-95 opacity-0 modal-content">
+  <!-- Upcoming Schedule Picker Modal -->
+  <div id="schedule-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 w-full max-w-sm text-white shadow-2xl">
+      <h3 class="text-lg font-bold mb-3">Set Event Schedule</h3>
       
-      <!-- Header -->
-      <div class="flex items-center justify-between pb-4 border-b border-gray-800">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-lg">
-            📖
-          </div>
-          <div>
-            <h3 class="text-lg font-bold text-white">Discord Developer Setup Guide</h3>
-            <p class="text-xs text-gray-400">How to link your custom Discord application</p>
-          </div>
-        </div>
-        <button id="close-guide-btn" class="text-gray-400 hover:text-white p-2">
-          ✖
-        </button>
+      <label class="block text-xs text-slate-400 mb-1">When will this event happen?</label>
+      <input type="datetime-local" id="event-datetime-input" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-indigo-500 mb-4">
+
+      <input type="hidden" id="target-event-id">
+
+      <div class="flex justify-end gap-2">
+        <button onclick="closeScheduleModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs">Cancel</button>
+        <button onclick="saveScheduledTime()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-semibold">Save Schedule</button>
       </div>
-
-      <!-- Scrollable Steps Body -->
-      <div class="overflow-y-auto py-5 space-y-6 flex-1 pr-2">
-        <!-- Step 1 -->
-        <div class="flex items-start space-x-4">
-          <div class="w-8 h-8 rounded-full bg-discord-blurple text-white font-bold text-sm flex items-center justify-center shrink-0">1</div>
-          <div class="space-y-1">
-            <h4 class="font-semibold text-white text-sm">Create a Discord Application</h4>
-            <p class="text-xs text-gray-400 leading-relaxed">
-              Navigate to the <a href="https://discord.com/developers/applications" target="_blank" class="text-discord-blurple underline font-medium">Discord Developer Portal</a>. Click <strong class="text-gray-200">New Application</strong> at the top right and enter a name (e.g., "Event Helper Bot").
-            </p>
-          </div>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="flex items-start space-x-4">
-          <div class="w-8 h-8 rounded-full bg-discord-blurple text-white font-bold text-sm flex items-center justify-center shrink-0">2</div>
-          <div class="space-y-1">
-            <h4 class="font-semibold text-white text-sm">Retrieve Application Credentials</h4>
-            <p class="text-xs text-gray-400 leading-relaxed">
-              In your new app's sidebar, click <strong class="text-gray-200">OAuth2</strong>. Locate the <strong class="text-gray-200">CLIENT ID</strong> and copy it to your clipboard.
-            </p>
-          </div>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="flex items-start space-x-4">
-          <div class="w-8 h-8 rounded-full bg-discord-blurple text-white font-bold text-sm flex items-center justify-center shrink-0">3</div>
-          <div class="space-y-1">
-            <h4 class="font-semibold text-white text-sm">Add Redirect Redirect URIs</h4>
-            <p class="text-xs text-gray-400 leading-relaxed">
-              Under OAuth2 Settings, click <strong class="text-gray-200">Add Redirect</strong>. Add the full URL where this web app is hosted (e.g., current page URL). Save your changes in Discord!
-            </p>
-          </div>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="flex items-start space-x-4">
-          <div class="w-8 h-8 rounded-full bg-discord-blurple text-white font-bold text-sm flex items-center justify-center shrink-0">4</div>
-          <div class="space-y-1">
-            <h4 class="font-semibold text-white text-sm">Paste Config into App</h4>
-            <p class="text-xs text-gray-400 leading-relaxed">
-              Click the gear icon <strong class="text-gray-200">⚙️</strong> in the header of this app and paste your Client ID and Redirect URI.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="pt-4 border-t border-gray-800 flex justify-end">
-        <button id="got-it-guide-btn" class="px-5 py-2 bg-discord-blurple hover:bg-indigo-600 text-white font-medium text-xs rounded-xl transition-all">
-          Got it!
-        </button>
-      </div>
-
     </div>
   </div>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    // --- APP STATE ---
-    const STORAGE_KEY_EVENTS = 'she_discord_events_v1';
-    const STORAGE_KEY_CFG = 'she_discord_cfg_v1';
-    const STORAGE_KEY_USER = 'she_discord_user_v1';
+    window.DB_URL = 'https://toxrqbcgtmkgvmauqbej.supabase.co';
+    window.DB_KEY = 'sb_publishable_lxctwas9qcMS5XZHWJ4Idw_POpLK1oW';
 
-    let state = {
-      events: [],
-      filter: 'all',
-      searchQuery: '',
-      currentUser: null,
-      config: {
-        clientId: '1551275171640508436',
-        redirectUri: window.location.href.split('#')[0],
-        mockMode: false
-      }
-    };
+    let currentUser = 'Staff Member';
 
-    // --- INITIALIZATION ---
-    window.addEventListener('DOMContentLoaded', () => {
-      loadLocalStorage();
-      handleOAuthCallback();
-      initEventListeners();
-      renderApp();
-    });
+    if (window.supabase) {
+      window.sbClient = window.supabase.createClient(window.DB_URL, window.DB_KEY);
 
-    // --- STORAGE MANAGEMENT ---
-    function loadLocalStorage() {
-      // Config
-      const savedCfg = localStorage.getItem(STORAGE_KEY_CFG);
-      if (savedCfg) {
-        try { state.config = { ...state.config, ...JSON.parse(savedCfg) }; } catch(e){}
-      }
-
-      // User
-      const savedUser = localStorage.getItem(STORAGE_KEY_USER);
-      if (savedUser) {
-        try { state.currentUser = JSON.parse(savedUser); } catch(e){}
-      }
-
-      // Events
-      const savedEvents = localStorage.getItem(STORAGE_KEY_EVENTS);
-      if (savedEvents) {
-        try { state.events = JSON.parse(savedEvents); } catch(e){}
-      } else {
-        // Mock default initial event if none exists
-        state.events = [
-          {
-            id: 'evt-' + Date.now(),
-            title: 'Weekly Community Game Night',
-            hosts: ['AlexAdmin', 'DiscordMod'],
-            cohosts: ['CommunityHost'],
-            status: 'Upcoming',
-            timestamp: new Date().toLocaleString()
-          }
-        ];
-        saveEvents();
-      }
-    }
-
-    function saveEvents() {
-      localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(state.events));
-    }
-
-    function saveConfig() {
-      localStorage.setItem(STORAGE_KEY_CFG, JSON.stringify(state.config));
-    }
-
-    function saveUser() {
-      if (state.currentUser) {
-        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(state.currentUser));
-      } else {
-        localStorage.removeItem(STORAGE_KEY_USER);
-      }
-    }
-
-
-    function handleOAuthCallback() {
-      const hash = window.location.hash.substring(1);
-      if (hash) {
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get('access_token');
-        if (accessToken) {
-
-          fetch('https://discord.com/api/users/@me', {
-            headers: { authorization: `Bearer ${accessToken}` }
-          })
-          .then(res => res.json())
-          .then(userData => {
-            if (userData.username) {
-              const avatarUrl = userData.avatar 
-                ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
-                : 'https://cdn.discordapp.com/embed/avatars/0.png';
-
-              state.currentUser = {
-                id: userData.id,
-                username: userData.username,
-                avatar: avatarUrl
-              };
-              saveUser();
-              autoFillHostName();
-            }
-          })
-          .catch(err => console.error('OAuth User Info Error:', err))
-          .finally(() => {
-
-            history.pushState("", document.title, window.location.pathname + window.location.search);
-            renderApp();
-          });
+      window.sbClient.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          currentUser = session.user.user_metadata.full_name || session.user.user_metadata.custom_claims?.global_name || session.user.email;
+          renderUserProfile(session.user);
         }
-      }
-    }
-
-    function loginWithDiscord() {
-      if (state.config.mockMode) {
-        // Quick Mock Auth Mode
-        const mockNames = ['PixelKnight', 'NeonValkyrie', 'CyberMod', 'AstraHost'];
-        const randomName = mockNames[Math.floor(Math.random() * mockNames.length)];
-        state.currentUser = {
-          id: '123456789',
-          username: randomName,
-          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${randomName}`
-        };
-        saveUser();
-        autoFillHostName();
-        renderApp();
-      } else {
-
-        const clientId = state.config.clientId;
-        const redirectUri = encodeURIComponent(state.config.redirectUri || window.location.href.split('#')[0]);
-        const scope = encodeURIComponent('identify');
-        const authUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
-        window.location.href = authUrl;
-      }
-    }
-
-    function logoutUser() {
-      state.currentUser = null;
-      saveUser();
-      renderApp();
-    }
-
-    function autoFillHostName() {
-      if (state.currentUser) {
-        const hostsInput = document.getElementById('event-hosts');
-        if (hostsInput && !hostsInput.value) {
-          hostsInput.value = state.currentUser.username;
-          renderTagPreviews();
-        }
-      }
-    }
-
-    function renderApp() {
-      renderAuthHeader();
-      renderEventsList();
-      renderStats();
-    }
-
-    function renderAuthHeader() {
-      const container = document.getElementById('auth-container');
-      if (!container) return;
-
-      if (state.currentUser) {
-        container.innerHTML = `
-          <div class="flex items-center space-x-3 bg-discord-darker p-1.5 pr-3 rounded-xl border border-gray-700/60 shadow-sm">
-            <img src="${state.currentUser.avatar}" alt="User Avatar" class="w-7 h-7 rounded-lg object-cover bg-gray-800">
-            <span class="text-xs font-semibold text-white tracking-wide">${escapeHtml(state.currentUser.username)}</span>
-            <button id="logout-btn" class="text-xs text-gray-400 hover:text-discord-red transition-colors ml-1 p-1" title="Log Out">
-              🚪
-            </button>
-          </div>
-        `;
-        document.getElementById('logout-btn')?.addEventListener('click', logoutUser);
-      } else {
-        container.innerHTML = `
-          <button id="discord-login-btn" class="px-3.5 py-2 bg-discord-blurple hover:bg-indigo-600 text-white rounded-xl text-xs md:text-sm font-semibold flex items-center space-x-2 transition-all shadow-md shadow-discord-blurple/20">
-            <svg class="w-4 h-4 fill-current" viewBox="0 0 127.14 96.36">
-              <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1,105.25,105.25,0,0,0,32.19-16.14c2.64-27.38-4.51-51.11-18.94-72.15ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.91,53.87,53,48.8,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.2,45.91,96.07,53,91,65.69,84.69,65.69Z"/>
-            </svg>
-            <span>Login with Discord</span>
-          </button>
-        `;
-        document.getElementById('discord-login-btn')?.addEventListener('click', loginWithDiscord);
-      }
-    }
-
-    function renderEventsList() {
-      const listEl = document.getElementById('events-list');
-      const emptyStateEl = document.getElementById('empty-state');
-      if (!listEl) return;
-
-      const filtered = state.events.filter(evt => {
-        const matchesFilter = state.filter === 'all' || evt.status === state.filter;
-        const q = state.searchQuery.toLowerCase();
-        const matchesSearch = !q || 
-          evt.title.toLowerCase().includes(q) ||
-          evt.hosts.some(h => h.toLowerCase().includes(q)) ||
-          evt.cohosts.some(c => c.toLowerCase().includes(q));
-
-        return matchesFilter && matchesSearch;
       });
 
-      if (filtered.length === 0) {
-        listEl.innerHTML = '';
-        emptyStateEl?.classList.remove('hidden');
-        return;
+      // 1. Fetch Events
+      async function loadEvents() {
+        const { data: events, error } = await window.sbClient
+          .from('team_data')
+          .select('*')
+          .eq('is_completed', false)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching events:', error);
+          return;
+        }
+
+        renderEventsGrid(events);
       }
 
-      emptyStateEl?.classList.add('hidden');
-      listEl.innerHTML = filtered.map(evt => {
-        const statusColors = {
-          'Upcoming': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-          'Live Now': 'bg-discord-red/20 text-discord-red border-discord-red/30 animate-pulse',
-          'Draft': 'bg-gray-700/50 text-gray-400 border-gray-600/40'
-        }[evt.status] || 'bg-gray-700/50 text-gray-300 border-gray-600/40';
+      function renderEventsGrid(events) {
+        const grid = document.getElementById('events-grid');
+        if (!grid) return;
 
-        return `
-          <div class="glass-card rounded-2xl p-5 hover:border-gray-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg group">
-            
-            <div class="space-y-2 flex-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${statusColors}">
-                  ${evt.status}
+        if (!events || events.length === 0) {
+          grid.innerHTML = `<p class="text-slate-500 italic col-span-full">No active events found.</p>`;
+          return;
+        }
+
+        grid.innerHTML = '';
+        events.forEach(event => {
+          const status = event.status || (event.scheduled_at ? 'Upcoming' : 'Draft');
+          const timeText = event.scheduled_at 
+            ? new Date(event.scheduled_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) 
+            : 'Unscheduled';
+
+          const badgeColor = status === 'Live now' ? 'bg-red-900/60 text-red-400 border-red-700' :
+                             status === 'Upcoming' ? 'bg-indigo-900/60 text-indigo-400 border-indigo-700' :
+                             'bg-slate-700 text-slate-300 border-slate-600';
+
+          const hostsDisplay = event.hosts ? `Host: ${event.hosts}` : '';
+          const cohostsDisplay = event.cohosts ? `Co-Host: ${event.cohosts}` : '';
+          const teamInfo = [hostsDisplay, cohostsDisplay].filter(Boolean).join(' | ');
+
+          const card = document.createElement('div');
+          card.className = 'bg-slate-800 border border-slate-700 rounded-xl p-5 hover:border-indigo-500 transition flex flex-col justify-between';
+          card.innerHTML = `
+            <div>
+              <div class="flex justify-between items-start mb-3">
+                <span class="text-xs font-semibold px-2 py-0.5 rounded border ${badgeColor}">
+                  ${status === 'Live now' ? '🔴 Live now' : status}
                 </span>
-                <span class="text-xs text-gray-500 font-mono">🕒 ${evt.timestamp}</span>
+                <span class="text-xs text-slate-400">📅 ${timeText}</span>
+              </div>
+              <h3 class="text-lg font-semibold mb-2 text-white">${event.title || 'Untitled Event'}</h3>
+              <p class="text-sm text-slate-400 mb-3">${event.content || ''}</p>
+              ${teamInfo ? `<p class="text-xs text-indigo-300 bg-slate-900/50 p-2 rounded border border-slate-700 mb-3">${teamInfo}</p>` : ''}
+            </div>
+            
+            <div class="border-t border-slate-700 pt-3 flex flex-col gap-3">
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-400">Status:</span>
+                <select onchange="handleStatusChange('${event.id}', this.value)" class="bg-slate-900 border border-slate-700 text-xs rounded px-2 py-1 text-slate-200">
+                  <option value="Draft" ${status === 'Draft' ? 'selected' : ''}>Draft</option>
+                  <option value="Upcoming" ${status === 'Upcoming' ? 'selected' : ''}>Upcoming</option>
+                  <option value="Live now" ${status === 'Live now' ? 'selected' : ''}>Live now</option>
+                </select>
               </div>
 
-              <h3 class="text-base font-bold text-white group-hover:text-discord-blurple transition-colors">${escapeHtml(evt.title)}</h3>
-
-              <div class="flex flex-wrap gap-2 pt-1">
-                <!-- Hosts Pills (Distinct Blue) -->
-                ${evt.hosts.map(h => `
-                  <span class="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30">
-                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400 mr-1.5"></span>
-                    Host: ${escapeHtml(h)}
-                  </span>
-                `).join('')}
-
-                <!-- Co-Hosts Pills (Distinct Purple) -->
-                ${evt.cohosts.map(c => `
-                  <span class="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-lg bg-purple-600/20 text-purple-300 border border-purple-500/30">
-                    <span class="w-1.5 h-1.5 rounded-full bg-purple-400 mr-1.5"></span>
-                    Co-Host: ${escapeHtml(c)}
-                  </span>
-                `).join('')}
+              <div class="flex justify-between items-center pt-1 border-t border-slate-700/50">
+                <span class="text-xs text-slate-500">${event.updated_by ? 'By: ' + event.updated_by : ''}</span>
+                <button onclick="markComplete('${event.id}')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded transition font-medium">
+                  ✓ Done
+                </button>
               </div>
             </div>
+          `;
+          grid.appendChild(card);
+        });
+      }
 
-            <!-- Actions -->
-            <div class="flex items-center space-x-2 justify-end border-t border-gray-800/80 pt-3 md:pt-0 md:border-0">
-              <button onclick="deleteEvent('${evt.id}')" class="p-2 text-gray-500 hover:text-discord-red hover:bg-discord-red/10 rounded-xl transition-all" title="Delete Event">
-                🗑️
-              </button>
+      // 2. Status Dropdown Handling
+      window.handleStatusChange = function(eventId, selectedStatus) {
+        if (selectedStatus === 'Upcoming') {
+          document.getElementById('target-event-id').value = eventId;
+          document.getElementById('schedule-modal').classList.remove('hidden');
+        } else {
+          updateEventStatus(eventId, selectedStatus, null);
+        }
+      };
+
+      window.closeScheduleModal = function() {
+        document.getElementById('schedule-modal').classList.add('hidden');
+        document.getElementById('target-event-id').value = '';
+        document.getElementById('event-datetime-input').value = '';
+      };
+
+      window.saveScheduledTime = async function() {
+        const eventId = document.getElementById('target-event-id').value;
+        const rawTime = document.getElementById('event-datetime-input').value;
+
+        if (!rawTime) {
+          alert("Please select a date and time.");
+          return;
+        }
+
+        const scheduledIso = new Date(rawTime).toISOString();
+        await updateEventStatus(eventId, 'Upcoming', scheduledIso);
+        closeScheduleModal();
+      };
+
+      async function updateEventStatus(eventId, status, scheduledAt = null) {
+        const payload = { status: status, updated_by: currentUser };
+        if (scheduledAt) payload.scheduled_at = scheduledAt;
+
+        const { error } = await window.sbClient
+          .from('team_data')
+          .update(payload)
+          .eq('id', eventId);
+
+        if (error) {
+          console.error("Error updating status:", error);
+        } else {
+          loadEvents();
+        }
+      }
+
+      // 3. Create Event with Hosts and Co-Hosts
+      window.handleCreateEvent = async function(e) {
+        e.preventDefault();
+        const title = document.getElementById('event-title').value;
+        const rawTime = document.getElementById('event-time').value;
+        const hosts = document.getElementById('event-hosts').value;
+        const cohosts = document.getElementById('event-cohosts').value;
+        const desc = document.getElementById('event-desc').value;
+
+        const scheduledIso = rawTime ? new Date(rawTime).toISOString() : null;
+
+        const { error } = await window.sbClient
+          .from('team_data')
+          .insert([{
+            title: title,
+            content: desc,
+            scheduled_at: scheduledIso,
+            hosts: hosts,
+            cohosts: cohosts,
+            status: 'Upcoming',
+            is_completed: false,
+            updated_by: currentUser
+          }]);
+
+        if (error) {
+          console.error('Error creating event:', error);
+          alert('Failed to save event. Ensure "hosts" and "cohosts" columns exist in Supabase!');
+        } else {
+          toggleModal(false);
+          loadEvents();
+        }
+      };
+
+      // 4. Mark Complete
+      window.markComplete = async function(eventId) {
+        const { error } = await window.sbClient
+          .from('team_data')
+          .update({ is_completed: true, updated_by: currentUser })
+          .eq('id', eventId);
+
+        if (error) {
+          console.error('Error completing event:', error);
+        } else {
+          loadEvents();
+        }
+      };
+
+      // 5. Discord Login
+      window.handleDiscordLogin = async function() {
+        await window.sbClient.auth.signInWithOAuth({
+          provider: 'discord',
+          options: {
+            redirectTo: window.location.origin + window.location.pathname
+          }
+        });
+      };
+
+      function renderUserProfile(user) {
+        const authArea = document.getElementById('auth-area');
+        const name = user.user_metadata.full_name || 'Discord Member';
+        const avatar = user.user_metadata.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png';
+
+        authArea.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <img src="${avatar}" alt="Avatar" class="w-9 h-9 rounded-full border border-indigo-500">
+            <div>
+              <p class="text-sm font-semibold">${name}</p>
+              <span class="text-xs bg-indigo-900 text-indigo-300 px-2 py-0.5 rounded-full">Connected</span>
             </div>
-
           </div>
         `;
-      }).join('');
-    }
-
-    function renderStats() {
-      const statsEl = document.getElementById('stats-total-events');
-      if (statsEl) {
-        statsEl.textContent = state.events.length;
-      }
-    }
-
-    function parseCommaSeparatedTags(inputVal) {
-      if (!inputVal) return [];
-      return inputVal.split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
-    }
-
-    function renderTagPreviews() {
-      const hostsVal = document.getElementById('event-hosts').value;
-      const cohostsVal = document.getElementById('event-cohosts').value;
-
-      const hostTags = parseCommaSeparatedTags(hostsVal);
-      const cohostTags = parseCommaSeparatedTags(cohostsVal);
-
-      const hostPreviewContainer = document.getElementById('hosts-tag-preview');
-      const cohostPreviewContainer = document.getElementById('cohosts-tag-preview');
-
-      if (hostPreviewContainer) {
-        hostPreviewContainer.innerHTML = hostTags.map(tag => `
-          <span class="text-xs font-medium px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30">
-            ${escapeHtml(tag)}
-          </span>
-        `).join('');
       }
 
-      if (cohostPreviewContainer) {
-        cohostPreviewContainer.innerHTML = cohostTags.map(tag => `
-          <span class="text-xs font-medium px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
-            ${escapeHtml(tag)}
-          </span>
-        `).join('');
+      loadEvents();
+    }
+
+    function toggleModal(show) {
+      const modal = document.getElementById('event-modal');
+      if (show) {
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+        document.getElementById('create-event-form').reset();
       }
-    }
-
-
-    function initEventListeners() {
-      document.getElementById('event-hosts')?.addEventListener('input', renderTagPreviews);
-      document.getElementById('event-cohosts')?.addEventListener('input', renderTagPreviews);
-
-      document.getElementById('event-form')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const title = document.getElementById('event-title').value.trim();
-        const hostsRaw = document.getElementById('event-hosts').value;
-        const cohostsRaw = document.getElementById('event-cohosts').value;
-        const status = document.getElementById('event-status').value;
-
-        const hosts = parseCommaSeparatedTags(hostsRaw);
-        const cohosts = parseCommaSeparatedTags(cohostsRaw);
-
-        if (!title || hosts.length === 0) return;
-
-        const newEvt = {
-          id: 'evt-' + Date.now(),
-          title,
-          hosts,
-          cohosts,
-          status,
-          timestamp: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-        };
-
-        state.events.unshift(newEvt);
-        saveEvents();
-        renderApp();
-
-        e.target.reset();
-        renderTagPreviews();
-      });
-
-      document.getElementById('search-events')?.addEventListener('input', (e) => {
-        state.searchQuery = e.target.value;
-        renderEventsList();
-      });
-
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          document.querySelectorAll('.filter-btn').forEach(b => {
-            b.classList.remove('bg-discord-blurple', 'text-white');
-            b.classList.add('bg-discord-darker', 'text-gray-300');
-          });
-          e.target.classList.remove('bg-discord-darker', 'text-gray-300');
-          e.target.classList.add('bg-discord-blurple', 'text-white');
-
-          state.filter = e.target.getAttribute('data-filter');
-          renderEventsList();
-        });
-      });
-
-      document.getElementById('clear-all-events-btn')?.addEventListener('click', () => {
-        if (state.events.length === 0) return;
-        state.events = [];
-        saveEvents();
-        renderApp();
-      });
-
-      const settingsModal = document.getElementById('settings-modal');
-      document.getElementById('open-settings-btn')?.addEventListener('click', () => {
-        document.getElementById('cfg-client-id').value = state.config.clientId || '';
-        document.getElementById('cfg-redirect-uri').value = state.config.redirectUri || '';
-        document.getElementById('cfg-mock-mode').checked = !!state.config.mockMode;
-        
-        settingsModal?.classList.remove('hidden');
-        setTimeout(() => {
-          settingsModal?.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
-        }, 10);
-      });
-
-      document.getElementById('close-settings-btn')?.addEventListener('click', closeSettingsModal);
-      document.getElementById('save-settings-btn')?.addEventListener('click', () => {
-        state.config.clientId = document.getElementById('cfg-client-id').value.trim();
-        state.config.redirectUri = document.getElementById('cfg-redirect-uri').value.trim();
-        state.config.mockMode = document.getElementById('cfg-mock-mode').checked;
-        saveConfig();
-        closeSettingsModal();
-      });
-
-      // Guide Modal Listeners
-      const guideModal = document.getElementById('guide-modal');
-      document.getElementById('open-guide-btn')?.addEventListener('click', () => {
-        guideModal?.classList.remove('hidden');
-        setTimeout(() => {
-          guideModal?.querySelector('.modal-content')?.classList.remove('scale-95', 'opacity-0');
-        }, 10);
-      });
-
-      document.getElementById('close-guide-btn')?.addEventListener('click', closeGuideModal);
-      document.getElementById('got-it-guide-btn')?.addEventListener('click', closeGuideModal);
-    }
-
-    function closeSettingsModal() {
-      const modal = document.getElementById('settings-modal');
-      modal?.querySelector('.modal-content')?.classList.add('scale-95', 'opacity-0');
-      setTimeout(() => modal?.classList.add('hidden'), 200);
-    }
-
-    function closeGuideModal() {
-      const modal = document.getElementById('guide-modal');
-      modal?.querySelector('.modal-content')?.classList.add('scale-95', 'opacity-0');
-      setTimeout(() => modal?.classList.add('hidden'), 200);
-    }
-
-    window.deleteEvent = function(id) {
-      state.events = state.events.filter(e => e.id !== id);
-      saveEvents();
-      renderApp();
-    };
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
   </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-
-    <script>
-      window.DB_URL = 'https://toxrqbcgtmkgvmauqbej.supabase.co'; 
-      window.DB_KEY = 'sb_publishable_lxctwas9qcMS5XZHWJ4Idw_POpLK1oW';
-
-if (window.supabase) {
-    window.sbClient = window.supabase.createClient(window.DB_URL, window.DB_KEY);
-
-    async function loadActiveEvents() {
-      const { data: events, error } = await window.sbClient
-        .from('team_data')
-        .select('*')
-        .eq('is_completed', false)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching events:', error);
-      } else {
-        console.log('Active upcoming events:', events);
-        displayEventsOnPage(events);
-      }
-    }
-
-    function displayEventsOnPage(events) {
-      const eventsContainer = document.getElementById('events-list');
-      if (!eventsContainer) return; 
-
-      eventsContainer.innerHTML = '';
-
-      events.forEach(event => {
-        const eventCard = document.createElement('div');
-        eventCard.className = 'p-4 mb-3 bg-slate-800 rounded-lg text-white border border-slate-700';
-        
-        eventCard.innerHTML = `
-          <h3 class="font-bold text-lg">${event.title || 'Untitled Event'}</h3>
-          <p class="text-slate-300 my-2">${event.content || ''}</p>
-          ${event.updated_by ? `<span class="text-xs text-slate-400">Last edited by: ${event.updated_by}</span>` : ''}
-          
-          <div class="mt-3 flex gap-2">
-            <button onclick="editEvent('${event.id}')" class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded">
-              Edit
-            </button>
-            <button onclick="markEventComplete('${event.id}')" class="px-3 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded">
-              Mark Complete
-            </button>
-          </div>
-        `;
-        
-        eventsContainer.appendChild(eventCard);
-      });
-    }
-
-    window.handleStatusChange = function(eventId, selectedStatus) {
-      if (selectedStatus === 'Upcoming') {
-        document.getElementById('target-event-id').value = eventId;
-        document.getElementById('schedule-modal').classList.remove('hidden');
-      } else {
-        updateEventStatus(eventId, selectedStatus, null);
-      }
-    };
-
-
-    window.closeScheduleModal = function() {
-      document.getElementById('schedule-modal').classList.add('hidden');
-      document.getElementById('target-event-id').value = '';
-      document.getElementById('event-datetime-input').value = '';
-    };
-
-
-    window.saveScheduledTime = async function() {
-      const eventId = document.getElementById('target-event-id').value;
-      const rawTime = document.getElementById('event-datetime-input').value;
-
-      if (!rawTime) {
-        alert("Please pick a valid date and time.");
-        return;
-      }
-
-      const scheduledIso = new Date(rawTime).toISOString();
-      await updateEventStatus(eventId, 'Upcoming', scheduledIso);
-      closeScheduleModal();
-    };
-
-
-    async function updateEventStatus(eventId, status, scheduledAt = null) {
-      const payload = { status: status };
-      if (scheduledAt) payload.scheduled_at = scheduledAt;
-
-      const { error } = await window.sbClient
-        .from('team_data')
-        .update(payload)
-        .eq('id', eventId);
-
-      if (error) console.error("Error updating status:", error);
-    }
-
-
-    function startLiveStatusChecker(events) {
-      setInterval(() => {
-        const now = new Date().getTime();
-
-        events.forEach(event => {
-          if (event.status === 'Upcoming' && event.scheduled_at) {
-            const eventTime = new Date(event.scheduled_at).getTime();
-
-            if (eventTime <= now) {
-              updateEventStatus(event.id, 'Live now', null);
-            }
-          }
-        });
-      }, 10000); 
-    }
-
-  }
-    window.editEvent = async function(eventId) {
-      const newTitle = prompt("Enter new event title:");
-      const newContent = prompt("Enter new event description:");
-      
-      if (!newTitle && !newContent) return;
-
-      const { error } = await window.sbClient
-        .from('team_data')
-        .update({ 
-          title: newTitle, 
-          content: newContent,
-          updated_by: 'Team Member' 
-        })
-        .eq('id', eventId);
-
-      if (error) console.error('Error updating event:', error);
-    };
-
-    window.markEventComplete = async function(eventId) {
-      const { error } = await window.sbClient
-        .from('team_data')
-        .update({ is_completed: true })
-        .eq('id', eventId);
-
-      if (error) console.error('Error completing event:', error);
-    };
-
-    loadActiveEvents();
-
-    window.sbClient
-      .channel('public:team_data')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_data' }, () => {
-        loadActiveEvents(); 
-      })
-      .subscribe();
-
-  } else {
-    console.error('Supabase SDK failed to load.');
-  }
-    </script>
-<!-- Event Schedule Modal -->
-<div id="schedule-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
-  <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 w-full max-w-sm text-white shadow-2xl">
-    <h3 class="text-lg font-bold mb-3">Set Event Schedule</h3>
-    
-    <label class="block text-xs text-slate-400 mb-1">When does this event happen?</label>
-    <input type="datetime-local" id="event-datetime-input" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500 mb-4">
-
-    <input type="hidden" id="target-event-id">
-
-    <div class="flex justify-end gap-2">
-      <button onclick="closeScheduleModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs">
-        Cancel
-      </button>
-      <button onclick="saveScheduledTime()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs font-semibold">
-        Save Schedule
-      </button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
